@@ -65,5 +65,53 @@ ruleTest({
         # Very long title 1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
       `,
     },
+    {
+      testName: 'Wraps title in double quotes when requested',
+      before: dedent`
+        # Hello world
+      `,
+      after: dedent`
+        ---
+        title: "Hello world"
+        ---
+        # Hello world
+      `,
+      options: {
+        fileName: 'Filename',
+        titleQuoteStyle: 'Double Quote',
+      },
+    },
+    {
+      testName: 'Wraps title in single quotes when requested',
+      before: dedent`
+        # Hello world
+      `,
+      after: dedent`
+        ---
+        title: 'Hello world'
+        ---
+        # Hello world
+      `,
+      options: {
+        fileName: 'Filename',
+        titleQuoteStyle: 'Single Quote',
+      },
+    },
+    {
+      testName: 'Escapes double quotes inside a double-quoted title',
+      before: dedent`
+        # Hello "world"
+      `,
+      after: dedent`
+        ---
+        title: "Hello \\"world\\""
+        ---
+        # Hello "world"
+      `,
+      options: {
+        fileName: 'Filename',
+        titleQuoteStyle: 'Double Quote',
+      },
+    },
   ],
 });

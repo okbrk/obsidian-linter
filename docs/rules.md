@@ -585,6 +585,11 @@ Inserts the title of the file into the YAML frontmatter. Gets the title from the
 Options:
 - Title Key: Which YAML key to use for title
 	- Default: `title`
+- Title Quote Style: The quote style used for the title value in the YAML frontmatter
+	- Default: `None`
+	- `None`: The title is only quoted when YAML requires it: ```title: Title```
+	- `Single Quote`: The title is always wrapped in single quotes: ```title: 'Title'```
+	- `Double Quote`: The title is always wrapped in double quotes: ```title: "Title"```
 
 Example: Adds a header with the title from heading.
 
@@ -615,6 +620,22 @@ After:
 ``````markdown
 ---
 title: Filename
+---
+
+``````
+Example: Adds a header with the title wrapped in double quotes.
+
+Before:
+
+``````markdown
+
+``````
+
+After:
+
+``````markdown
+---
+title: "Filename"
 ---
 
 ``````

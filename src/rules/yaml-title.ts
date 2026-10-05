@@ -1,16 +1,21 @@
 import {Options, RuleType} from '../rules';
-import RuleBuilder, {ExampleBuilder, OptionBuilderBase, TextOptionBuilder} from './rule-builder';
+import RuleBuilder, {DropdownOptionBuilder, ExampleBuilder, OptionBuilderBase, TextOptionBuilder} from './rule-builder';
 import dedent from 'ts-dedent';
+import {dump} from 'js-yaml';
 import {formatYAML, initYAML, toYamlString} from '../utils/yaml';
 import {ignoreListOfTypes, IgnoreTypes} from '../utils/ignore-types';
 import {escapeDollarSigns} from '../utils/regex';
 import {insert} from '../utils/strings';
+
+type TitleQuoteStyle = 'None' | 'Single Quote' | 'Double Quote';
 
 class YamlTitleOptions implements Options {
   @RuleBuilder.noSettingControl()
     fileName: string;
 
   titleKey?: string = 'title';
+
+  titleQuoteStyle?: TitleQuoteStyle = 'None';
 }
 
 @RuleBuilder.register
@@ -38,7 +43,16 @@ export default class YamlTitle extends RuleBuilder<YamlTitleOptions> {
     });
     title = title || options.fileName;
 
-    title = toYamlString(title);
+    switch (options.titleQuoteStyle) {
+      case 'Single Quote':
+        title = dump(title, {lineWidth: -1, forceQuotes: true, quotingType: '\''}).slice(0, -1);
+        break;
+      case 'Double Quote':
+        title = dump(title, {lineWidth: -1, forceQuotes: true, quotingType: '"'}).slice(0, -1);
+        break;
+      default:
+        title = toYamlString(title);
+    }
 
     return formatYAML(text, (text) => {
       const title_match_str = `\n${options.titleKey}.*\n`;
@@ -88,6 +102,22 @@ export default class YamlTitle extends RuleBuilder<YamlTitleOptions> {
           fileName: 'Filename',
         },
       }),
+      new ExampleBuilder({
+        description: 'Adds a header with the title wrapped in double quotes.',
+        before: dedent`
+          ${''}
+        `,
+        after: dedent`
+          ---
+          title: "Filename"
+          ---
+          ${''}
+        `,
+        options: {
+          fileName: 'Filename',
+          titleQuoteStyle: 'Double Quote',
+        },
+      }),
     ];
   }
   get optionBuilders(): OptionBuilderBase<YamlTitleOptions>[] {
@@ -97,6 +127,26 @@ export default class YamlTitle extends RuleBuilder<YamlTitleOptions> {
         name: 'Title Key',
         description: 'Which YAML key to use for title',
         optionsKey: 'titleKey',
+      }),
+      new DropdownOptionBuilder<YamlTitleOptions, TitleQuoteStyle>({
+        OptionsClass: YamlTitleOptions,
+        name: 'Title Quote Style',
+        description: 'The quote style used for the title value in the YAML frontmatter',
+        optionsKey: 'titleQuoteStyle',
+        records: [
+          {
+            value: 'None',
+            description: 'The title is only quoted when YAML requires it: ```title: Title```',
+          },
+          {
+            value: 'Single Quote',
+            description: 'The title is always wrapped in single quotes: ```title: \'Title\'```',
+          },
+          {
+            value: 'Double Quote',
+            description: 'The title is always wrapped in double quotes: ```title: "Title"```',
+          },
+        ],
       }),
     ];
   }
