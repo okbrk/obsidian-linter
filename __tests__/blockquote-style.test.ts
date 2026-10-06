@@ -213,5 +213,27 @@ ruleTest({
       `,
       options: {style: 'space'},
     },
+    { // accounts for https://github.com/platers/obsidian-linter/issues/1181
+      testName: 'Additional paragraphs of a list item in a blockquote keep their indentation',
+      before: dedent`
+        >- List item 1.
+        >
+        > - List item 2.
+        >
+        >    Second paragraph.
+        >
+        >- List item 3.
+      `,
+      after: dedent`
+        > - List item 1.
+        >
+        > - List item 2.
+        >
+        >    Second paragraph.
+        >
+        > - List item 3.
+      `,
+      options: {style: 'space'},
+    },
   ],
 });

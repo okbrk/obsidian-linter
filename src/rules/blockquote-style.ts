@@ -35,6 +35,7 @@ export default class BlockquoteStyle extends RuleBuilder<BlockquoteStyleOptions>
       const linesWithContent: boolean[] = [];
       let currentIndex = 0;
       let done = false;
+      let inList = false;
       do {
         let nextNewLine = blockquote.indexOf('\n', currentIndex);
         if (nextNewLine === -1) {
@@ -47,8 +48,18 @@ export default class BlockquoteStyle extends RuleBuilder<BlockquoteStyleOptions>
         const lineEnd = offset + nextNewLine + (done ? 1 : 0);
         protectedLines.push(codeAndMath.isProtected(lineStart, lineEnd) || protectedRanges.isProtected(lineStart, contentStart));
         const restOfLine = redactProtected(text, protectedRanges, contentStart, lineEnd);
-        listItemMarkerLines.push(startsWithListMarkerRegex.test(restOfLine));
-        linesWithContent.push(restOfLine.trim() !== '');
+        const hasContent = restOfLine.trim() !== '';
+        const isListItemMarkerLine = startsWithListMarkerRegex.test(restOfLine);
+        // indented lines following a list item are part of that list item (i.e. additional paragraphs), so their indentation must be kept
+        const isListContinuationLine = !isListItemMarkerLine && hasContent && inList && /(?:[ \t]{2,}|\t)$/.test(startOfLine);
+        if (isListItemMarkerLine) {
+          inList = true;
+        } else if (hasContent && !isListContinuationLine) {
+          inList = false;
+        }
+
+        listItemMarkerLines.push(isListItemMarkerLine || isListContinuationLine);
+        linesWithContent.push(hasContent);
         currentIndex = nextNewLine + 1;
       } while (!done);
 
