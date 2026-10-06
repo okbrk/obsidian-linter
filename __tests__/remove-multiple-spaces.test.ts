@@ -98,6 +98,24 @@ ruleTest({
       `,
     },
     {
+      // accounts for https://github.com/platers/obsidian-linter/issues/951
+      testName: 'Multiple spaces inside of table cell content are removed while column padding is kept',
+      before: dedent`
+        | Foo   | Bar |
+        | ----- | --- |
+        | Hello | World! Some  double  spaces. |
+        ${''}
+        Double  spaces  outside of a table.
+      `,
+      after: dedent`
+        | Foo   | Bar |
+        | ----- | --- |
+        | Hello | World! Some double spaces. |
+        ${''}
+        Double spaces outside of a table.
+      `,
+    },
+    {
       // accounts for https://github.com/platers/obsidian-linter/issues/289
       testName: 'Callouts and blockquotes allow multiple spaces at start to allow for code and list item indentation',
       before: dedent`

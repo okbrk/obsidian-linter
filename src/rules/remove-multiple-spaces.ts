@@ -2,7 +2,7 @@ import {Options, RuleType} from '../rules';
 import RuleBuilder, {ExampleBuilder, OptionBuilderBase} from './rule-builder';
 import dedent from 'ts-dedent';
 import {IgnoreTypes} from '../utils/ignore-types';
-import {getListItemTextPositions} from '../utils/mdast';
+import {getAllTablesInText, getListItemTextPositions} from '../utils/mdast';
 import {collectUnprotectedRegexReplacements, ProtectedRanges} from '../utils/protected-ranges';
 import {checklistBoxStartsTextRegex} from '../utils/regex';
 import {replaceTextRanges, textReplacement} from '../utils/strings';
@@ -16,7 +16,7 @@ export default class RemoveMultipleSpaces extends RuleBuilder<RemoveMultipleSpac
       nameKey: 'rules.remove-multiple-spaces.name',
       descriptionKey: 'rules.remove-multiple-spaces.description',
       type: RuleType.CONTENT,
-      ruleIgnoreTypes: [IgnoreTypes.code, IgnoreTypes.inlineCode, IgnoreTypes.math, IgnoreTypes.inlineMath, IgnoreTypes.yaml, IgnoreTypes.link, IgnoreTypes.wikiLink, IgnoreTypes.tag, IgnoreTypes.table, IgnoreTypes.image],
+      ruleIgnoreTypes: [IgnoreTypes.code, IgnoreTypes.inlineCode, IgnoreTypes.math, IgnoreTypes.inlineMath, IgnoreTypes.yaml, IgnoreTypes.link, IgnoreTypes.wikiLink, IgnoreTypes.tag, IgnoreTypes.image],
     });
   }
   get OptionsClass(): new () => RemoveMultipleSpacesOptions {
@@ -52,9 +52,17 @@ export default class RemoveMultipleSpaces extends RuleBuilder<RemoveMultipleSpac
       ));
     }
 
+    // Spaces next to a table cell's pipe are column alignment padding, so only spaces inside of cell content are collapsed.
+    const tables = getAllTablesInText(text);
+    const editableReplacements = tables.length === 0 ? replacements : replacements.filter((replacement) => {
+      const inTable = tables.some((table) => replacement.startIndex >= table.startIndex && replacement.endIndex <= table.endIndex);
+
+      return !inTable || (text.charAt(replacement.startIndex - 1) !== '|' && text.charAt(replacement.endIndex) !== '|');
+    });
+
     // Paragraph edits are disjoint, and the document pass excludes all lists.
-    replacements.sort((a, b) => a.startIndex - b.startIndex);
-    return replaceTextRanges(text, replacements);
+    editableReplacements.sort((a, b) => a.startIndex - b.startIndex);
+    return replaceTextRanges(text, editableReplacements);
   }
   get exampleBuilders(): ExampleBuilder<RemoveMultipleSpacesOptions>[] {
     return [
