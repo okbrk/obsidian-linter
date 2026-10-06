@@ -440,5 +440,22 @@ ruleTest({
         includeBlankLineBetweenFootnotes: true,
       },
     },
+    { // accounts for https://github.com/platers/obsidian-linter/issues/1398
+      testName: 'Moving footnotes to the bottom treats footnote keys as case-insensitive',
+      before: dedent`
+        hello [^testkey]
+        ${''}
+        [^testKey]: testing
+        ${''}
+        More text.
+      `,
+      after: dedent`
+        hello [^testkey]
+        ${''}
+        More text.
+        ${''}
+        [^testKey]: testing
+      `,
+    },
   ],
 });

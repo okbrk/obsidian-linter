@@ -431,7 +431,8 @@ export function moveFootnotesToEnd(text: string, includeBlankLinesBetweenFootnot
   const mapOfFootnoteToFootnoteReferenceIndex = new Map<string, number>();
 
   const getAllReferencePositionsForFootnote = function (text: string, footnote: string, startOfFootnoteReferenceSearch: number): void {
-    const footnoteReference = footnote.match(/\[\^.*?\]/)[0];
+    // footnote keys are case-insensitive in Obsidian, so the key is normalized for lookups
+    const footnoteReference = footnote.match(/\[\^.*?\]/)[0].toLowerCase();
 
     if (footnoteKeyToFootnoteKeyInfo.has(footnoteReference)) {
       const keyInfo = footnoteKeyToFootnoteKeyInfo.get(footnoteReference);
@@ -442,23 +443,18 @@ export function moveFootnotesToEnd(text: string, includeBlankLinesBetweenFootnot
       return;
     }
 
-    let footnoteReferenceLocation: number;
     const footnoteReferenceLocations: number[] = [];
-    do {
-      if (startOfFootnoteReferenceSearch < 0) {
+    const referenceRegex = new RegExp(footnoteReference.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    for (const match of text.matchAll(referenceRegex)) {
+      if (match.index > startOfFootnoteReferenceSearch) {
         break;
       }
-      footnoteReferenceLocation = text.lastIndexOf(footnoteReference, startOfFootnoteReferenceSearch);
-      if (footnoteReferenceLocation === -1) {
-        continue;
-      }
 
-      if (!protectedRanges.isProtected(footnoteReferenceLocation, footnoteReferenceLocation + footnoteReference.length)) {
-        footnoteReferenceLocations.push(footnoteReferenceLocation);
+      if (!protectedRanges.isProtected(match.index, match.index + footnoteReference.length)) {
+        footnoteReferenceLocations.push(match.index);
       }
-
-      startOfFootnoteReferenceSearch = footnoteReferenceLocation - 1;
-    } while (footnoteReferenceLocation > 0);
+    }
+    footnoteReferenceLocations.reverse(); // last instance to first instance in file
 
     const keyInfo: footnoteKeyInfo = {
       key: footnoteReference,
